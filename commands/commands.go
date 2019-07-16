@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/cheggaaa/pb/v3"
 )
 
 // CopyFileToFile функция для копирования ИЗ В
 // from - откуда копировать
 // to 	- куда попировать
 // buff - размер буфера
-func CopyFileToFile(from string, to string, buff int) error {
+func CopyFileToFile(from string, to string) error {
 	reader, err := getReader(from)
 	if err != nil {
 		return err
@@ -19,13 +21,38 @@ func CopyFileToFile(from string, to string, buff int) error {
 	if err != nil {
 		return err
 	}
-	buffer, err := getBuffer(buff)
+
+	fileLen, err := os.Stat(from)
 	if err != nil {
 		return err
 	}
-	localBuffer := make([]byte, buffer)
-	io.CopyBuffer(writer, reader, localBuffer)
 
+	progBar := pb.Full.Start64(fileLen.Size())
+	progBar.SetWriter(os.Stdout)
+	copy(reader, writer, fileLen.Size(), func(progress int64) {
+		progBar.SetCurrent(progress)
+	})
+	progBar.Finish()
+	return nil
+}
+
+func copy(reader io.Reader, writer io.Writer, size int64, callback func(progress int64)) error {
+
+	step := size / int64(100)
+	progress := int64(0)
+	for progress < size {
+		written, err := io.CopyN(writer, reader, step)
+		if err == io.EOF {
+			progress += written
+			callback(progress)
+			break
+		}
+		if err != nil {
+			return err
+		}
+		progress += written
+		callback(progress)
+	}
 	return nil
 }
 
@@ -45,15 +72,4 @@ func getWriter(to string) (io.Writer, error) {
 		err = fmt.Errorf("Не удается открыть целевой файл %s", to)
 	}
 	return toFile, err
-}
-
-func getBuffer(buff int) (int, error) {
-	var err error
-	buffer := buff * 1024
-	if buffer < 1024 {
-		err = fmt.Errorf("Размер буфера не может быть меньше 1024 байт")
-	} else if buffer > 1024*1024*8 {
-		err = fmt.Errorf("Размер буфера не может быть больше 8 Мб")
-	}
-	return buffer, err
 }
