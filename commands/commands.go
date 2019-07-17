@@ -29,16 +29,23 @@ func CopyFileToFile(from string, to string) error {
 
 	progBar := pb.Full.Start64(fileLen.Size())
 	progBar.SetWriter(os.Stdout)
-	copy(reader, writer, fileLen.Size(), func(progress int64) {
+	err = copy(reader, writer, fileLen.Size(), func(progress int64) {
 		progBar.SetCurrent(progress)
 	})
 	progBar.Finish()
+	defer writer.Close()
+	defer reader.Close()
+	if err != nil {
+		return fmt.Errorf("Ошибка при копировании файла %s", err)
+	}
 	return nil
 }
 
 func copy(reader io.Reader, writer io.Writer, size int64, callback func(progress int64)) error {
-
 	step := size / int64(100)
+	if step == 0 {
+		step = size
+	}
 	progress := int64(0)
 	for progress < size {
 		written, err := io.CopyN(writer, reader, step)
@@ -56,7 +63,7 @@ func copy(reader io.Reader, writer io.Writer, size int64, callback func(progress
 	return nil
 }
 
-func getReader(from string) (io.Reader, error) {
+func getReader(from string) (io.ReadCloser, error) {
 	fromFile, ioErr := os.Open(from)
 	var err error
 	if ioErr != nil {
@@ -65,7 +72,7 @@ func getReader(from string) (io.Reader, error) {
 	return fromFile, err
 }
 
-func getWriter(to string) (io.Writer, error) {
+func getWriter(to string) (io.WriteCloser, error) {
 	toFile, ioErr := os.Create(to)
 	var err error
 	if ioErr != nil {
