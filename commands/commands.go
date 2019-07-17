@@ -36,7 +36,7 @@ func CopyFileToFile(from string, to string) error {
 	defer writer.Close()
 	defer reader.Close()
 	if err != nil {
-		return fmt.Errorf("Ошибка при копировании файла %s", err)
+		return fmt.Errorf("ошибка при копировании файла %s", err)
 	}
 	return nil
 }
@@ -67,7 +67,7 @@ func getReader(from string) (io.ReadCloser, error) {
 	fromFile, ioErr := os.Open(from)
 	var err error
 	if ioErr != nil {
-		err = fmt.Errorf("Не удается открыть исходный файл %s", from)
+		err = fmt.Errorf("не удается открыть исходный файл %s", from)
 	}
 	return fromFile, err
 }
@@ -76,7 +76,7 @@ func getWriter(to string) (io.WriteCloser, error) {
 	toFile, ioErr := os.Create(to)
 	var err error
 	if ioErr != nil {
-		err = fmt.Errorf("Не удается открыть целевой файл %s", to)
+		err = fmt.Errorf("не удается открыть целевой файл %s", to)
 	}
 	return toFile, err
 }
